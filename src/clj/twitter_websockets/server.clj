@@ -9,7 +9,8 @@
             [environ.core :refer [env]]
             [org.httpkit.server :refer [run-server]]
             [taoensso.sente :as sente]
-            [clojure.core.async :as async :refer [<! <!! chan go-loop thread]])
+            [clojure.core.async :as async :refer [<! <!! chan go-loop thread]]
+            [twitterclient.twitterclient :as tc])
   (:import (java.util UUID)))
 
 (let [{:keys [ch-recv send-fn ajax-post-fn ajax-get-or-ws-handshake-fn
@@ -87,6 +88,15 @@
           :i i}]))
     (recur (inc i))))
 
+(def tweets-chan (chan))
+
+(defn tweets-loop []
+  (go-loop []
+    (let [tweet (<! tweets-chan)]
+      (println tweet))))
+
 (defn -main [& [port]]
-  (run port)
-  (start-broadcaster!))
+  ;(run port)
+  ;(start-broadcaster!)
+  (tc/start-twitter-api tweets-chan)
+  (tweets-loop))

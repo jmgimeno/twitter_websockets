@@ -6,7 +6,7 @@
 
   :source-paths ["src/clj" "src/cljs"]
 
-  :dependencies [[org.clojure/clojure "1.6.0"]
+  :dependencies [[org.clojure/clojure "1.7.0-alpha4"]
                  [org.clojure/clojurescript "0.0-2371" :scope "provided"]
                  [ring "1.3.1"]
                  [compojure "1.2.0"]
@@ -18,7 +18,11 @@
                  [weasel "0.4.0-SNAPSHOT"]
                  [leiningen "2.5.0"]
                  [http-kit "2.1.19"]
-                 [com.taoensso/sente "1.3.0"]]
+                 [com.taoensso/sente "1.3.0"]
+                 [twitter-api "0.7.7"]
+                 [org.clojure/core.async "0.1.346.0-17112a-alpha"]
+                 [org.clojure/tools.logging "0.3.1"]
+                 [clj-time "0.9.0"]]
 
   :plugins [[lein-cljsbuild "1.0.3"]
             [lein-environ "1.0.0"]]
