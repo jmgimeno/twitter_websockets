@@ -85,10 +85,7 @@
       (println "Sending to uid " uid)
       (chsk-send! uid
         [:some/broadcast
-         {:what-is-this "A broadcast pushed from server"
-          :how-often    "Every 10 seconds"
-          :to-whom uid
-          :i i}]))
+         "HEEEEEY"]))
     (recur (inc i))))
 
 (def tweets-chan (chan))
@@ -99,7 +96,8 @@
       (println tweet))))
 
 (defn -main [& [port]]
-  ;(run port)
-  ;(start-broadcaster!)
-  (tc/start-twitter-api tweets-chan)
-  (tweets-loop))
+  (run port)
+  (start-broadcaster!)
+  ;(tc/start-twitter-api tweets-chan)
+  ;(tweets-loop)
+  )

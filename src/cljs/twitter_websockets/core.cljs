@@ -23,4 +23,7 @@
 
 (defn main []
   (go-loop []
-           (println (<! ch-chsk))) )
+             (let [{:keys [event]} (<! ch-chsk)
+                   [ev-id ev-data] event]
+               (println "He rebut això: " ev-data "PROU!!!!"))
+             (recur)))
