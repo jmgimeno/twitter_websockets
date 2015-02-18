@@ -1,11 +1,12 @@
 (ns twitter-websockets.server
   (:require [clojure.java.io :as io]
             [twitter-websockets.dev :refer [is-dev? inject-devmode-html browser-repl start-figwheel]]
-            [compojure.core :refer [GET POST defroutes]]
+            [compojure.core :refer [GET POST defroutes routes]]
             [compojure.route :refer [resources not-found]]
             [compojure.handler :refer [api]]
             [net.cgrand.enlive-html :refer [deftemplate]]
             [ring.middleware.reload :as reload]
+            [ring.middleware.session :refer [wrap-session]]
             [environ.core :refer [env]]
             [org.httpkit.server :refer [run-server]]
             [taoensso.sente :as sente]
@@ -47,21 +48,23 @@
               (assoc (:session req) :uid (unique-id)))
    :body (page)})
 
-(defroutes routes
-  (resources "/")
-  (resources "/react" {:root "react"})
+(defroutes my-routes
+           (-> (routes
+                 (resources "/")
+                 (resources "/react" {:root "react"})
 
-  (GET  "/chsk" req (ring-ajax-get-or-ws-handshake req))
-  (POST "/chsk" req (ring-ajax-post                req))
+                 (GET "/chsk" req (ring-ajax-get-or-ws-handshake req))
+                 (POST "/chsk" req (ring-ajax-post req))
 
-  (GET "/*" req (#'index req))
+                 (GET "/*" req (#'index req))
 
-  (not-found "These are not the androids that you're looking for."))
+                 (not-found "These are not the androids that you're looking for."))
+               wrap-session))
 
 (def http-handler
   (if is-dev?
-    (reload/wrap-reload (api #'routes))
-    (api routes)))
+    (reload/wrap-reload (api #'my-routes))
+    (api my-routes)))
 
 (defn run [& [port]]
   (defonce ^:private server
