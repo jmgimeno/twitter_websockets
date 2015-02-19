@@ -10,6 +10,7 @@
   (let [last-received (atom (t/epoch))
         chunk-chan (chan 1 (processing/process-chunk last-received) processing/ex-handler)
         conn (atom {})
-        watch-active (atom false)]
+        ;watch-active (atom false)
+        ]
     (http-client/start-twitter-conn! conn chunk-chan)
     (pipe chunk-chan tweets false)))

@@ -17,12 +17,12 @@
 (let [{:keys [ch-recv send-fn ajax-post-fn ajax-get-or-ws-handshake-fn
               connected-uids]}
       (sente/make-channel-socket! {})]
-  (def ring-ajax-post                ajax-post-fn)
+  (def ring-ajax-post ajax-post-fn)
   (def ring-ajax-get-or-ws-handshake ajax-get-or-ws-handshake-fn)
-  (def ch-chsk                       ch-recv) ; ChannelSocket's receive channel
-  (def chsk-send!                    send-fn) ; ChannelSocket's send API fn
-  (def connected-uids                connected-uids) ; Watchable, read-only atom
- )
+  (def ch-chsk ch-recv)                                     ; ChannelSocket's receive channel
+  (def chsk-send! send-fn)                                  ; ChannelSocket's send API fn
+  (def connected-uids connected-uids)                       ; Watchable, read-only atom
+  )
 
 ; UUID and session management
 
@@ -38,16 +38,16 @@
   (get-in req [:session :uid]))
 
 (deftemplate page
-  (io/resource "index.html") [] [:body] (if is-dev? inject-devmode-html identity))
+             (io/resource "index.html") [] [:body] (if is-dev? inject-devmode-html identity))
 
 (defn index
   "Handle index page request. Injects session uid if needed."
   [req]
-  {:status 200
+  {:status  200
    :session (if (session-uid req)
               (:session req)
               (assoc (:session req) :uid (unique-id)))
-   :body (page)})
+   :body    (page)})
 
 (defroutes my-routes
            (-> (routes
@@ -69,12 +69,12 @@
 
 (defn run [& [port]]
   (defonce ^:private server
-    (do
-      (if is-dev? (start-figwheel))
-      (let [port (Integer. (or port (env :port) 10555))]
-        (print "Starting web server on port" port ".\n")
-        (run-server http-handler {:port port
-                          :join? false}))))
+           (do
+             (if is-dev? (start-figwheel))
+             (let [port (Integer. (or port (env :port) 10555))]
+               (print "Starting web server on port" port ".\n")
+               (run-server http-handler {:port  port
+                                         :join? false}))))
   server)
 
 (defn start-broadcaster! []
@@ -84,8 +84,8 @@
     (doseq [uid (:any @connected-uids)]
       (println "Sending to uid " uid)
       (chsk-send! uid
-        [:some/broadcast
-         "HEEEEEY"]))
+                  [:some/broadcast
+                   "HEEEEEY"]))
     (recur (inc i))))
 
 (def tweets-chan (chan))
@@ -93,11 +93,19 @@
 (defn tweets-loop []
   (go-loop []
     (let [tweet (<! tweets-chan)]
-      (println tweet))))
+      ;(println (:text tweet))
+      (go-loop []
+        (doseq [uid (:any @connected-uids)]
+          ;(println "Sending to uid " uid)
+          (chsk-send! uid
+                      [:some/broadcast (:text tweet)]))
+        (recur ))
+      )
+    (recur)))
 
 (defn -main [& [port]]
   (run port)
-  (start-broadcaster!)
-  ;(tc/start-twitter-api tweets-chan)
-  ;(tweets-loop)
+  ;(start-broadcaster!)
+  (tc/start-twitter-api tweets-chan)
+  (tweets-loop)
   )
