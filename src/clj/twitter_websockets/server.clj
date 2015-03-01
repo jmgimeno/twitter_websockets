@@ -94,18 +94,19 @@
   (go-loop []
     (let [tweet (<! tweets-chan)]
       ;(println (:text tweet))
-      (go-loop []
-        (doseq [uid (:any @connected-uids)]
-          ;(println "Sending to uid " uid)
-          (chsk-send! uid
-                      [:some/broadcast (:text tweet)]))
-        (recur ))
+      (doseq [uid (:any @connected-uids)]
+        ;(println "Sending to uid " uid)
+        (chsk-send! uid
+                    [:some/broadcast (:text tweet)]))
+
       )
     (recur)))
 
 (defn -main [& [port]]
   (run port)
   ;(start-broadcaster!)
-  (tc/start-twitter-api tweets-chan)
-  (tweets-loop)
+  ;(async/go
+  ;  (<! (async/timeout 30000)))
+  ;(tc/start-twitter-api tweets-chan)
+  ;(tweets-loop)
   )
