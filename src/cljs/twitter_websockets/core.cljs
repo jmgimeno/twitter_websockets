@@ -35,8 +35,8 @@
     om/IRender
     (render [_]
       (html
-        [:h3 "Recived Tweets:"]
-        (map (dom/p nil %) tweets)
+        [:div [:h3 "Recived Tweets:"]
+         (map #(dom/p nil %) tweets)]
         ))))
 
 (defn application [cursor owner]
@@ -47,8 +47,9 @@
     om/IRender
     (render [_]
       (html
-        [:h1 "Twitter Streaming"]
-        (om/build tweets-view cursor)))))
+        [:div
+         [:h1 "Twitter Streaming"]
+         (om/build tweets-view cursor)]))))
 
 
 (defn main []
