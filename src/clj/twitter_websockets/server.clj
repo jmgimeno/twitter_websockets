@@ -107,6 +107,6 @@
   ;(start-broadcaster!)
   ;(async/go
   ;  (<! (async/timeout 30000)))
-  ;(tc/start-twitter-api tweets-chan)
-  ;(tweets-loop)
+  (tc/start-twitter-api tweets-chan)
+  (tweets-loop)
   )

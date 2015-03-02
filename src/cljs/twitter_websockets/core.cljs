@@ -25,9 +25,9 @@
 (defn event-loop [cursor owner]
   (go-loop []
            (let [{:keys [event]} (<! ch-chsk)
-                 [ev-id ev-data] event]
-             (println (last ev-data))
-             (om/transact! cursor [:tweets] #(conj % (last ev-data))))
+                 [ev-id [_ ev-data]] event]
+             (println ev-data)
+             (om/transact! cursor [:tweets] #(take 10 (into [ev-data] %))))
            (recur)))
 
 (defn tweets-view [{:keys [tweets]}]
@@ -41,9 +41,9 @@
 
 (defn application [cursor owner]
   (reify
-    ;om/IWillMount
-    ;(will-mount [_]
-    ;  (event-loop cursor owner))
+    om/IWillMount
+    (will-mount [_]
+      (event-loop cursor owner))
     om/IRender
     (render [_]
       (html
