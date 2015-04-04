@@ -77,36 +77,22 @@
                                          :join? false}))))
   server)
 
-(defn start-broadcaster! []
-  (go-loop [i 0]
-    (<! (async/timeout 10000))
-    (println (format "Broadcasting server>user: %s" @connected-uids))
-    (doseq [uid (:any @connected-uids)]
-      (println "Sending to uid " uid)
-      (chsk-send! uid
-                  [:some/broadcast
-                   "HEEEEEY"]))
-    (recur (inc i))))
-
 (def tweets-chan (chan))
 
 (defn tweets-loop []
   (go-loop []
     (let [tweet (<! tweets-chan)]
-      ;(println (:text tweet))
+      #_(println (:text tweet))
       (doseq [uid (:any @connected-uids)]
-        ;(println "Sending to uid " uid)
+        #_(println "Sending to uid " uid)
         (chsk-send! uid
-                    [:some/broadcast (:text tweet)]))
+                    [:tweet/broadcast (:text tweet)]))
 
       )
     (recur)))
 
 (defn -main [& [port]]
   (run port)
-  ;(start-broadcaster!)
-  ;(async/go
-  ;  (<! (async/timeout 30000)))
   (tc/start-twitter-api tweets-chan)
   (tweets-loop)
   )

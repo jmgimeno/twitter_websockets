@@ -25,18 +25,21 @@
 (defn event-loop [cursor owner]
   (go-loop []
            (let [{:keys [event]} (<! ch-chsk)
-                 [ev-id [_ ev-data]] event]
-             (println ev-data)
-             (om/transact! cursor [:tweets] #(take 10 (into [ev-data] %))))
+                 [ev-id ev-value] event]
+             (if (= :chsk/recv ev-id)
+               (let [[_ val] ev-value]
+                 #_(println "::::::" val)
+                 (if (or (not (string? val)) (not (clojure.string/blank? val)))
+                   (om/transact! cursor [:tweets] #(take 10 (into [val] %)))))))
            (recur)))
 
-(defn tweets-view [{:keys [tweets]}]
+(defn tweets-view [{:keys [tweets]} owner]
   (reify
     om/IRender
     (render [_]
       (html
         [:div [:h3 "Recived Tweets:"]
-         (map #(dom/p nil %) tweets)]
+         [:ul (map #(vector :li %) tweets)]]
         ))))
 
 (defn application [cursor owner]
@@ -53,6 +56,5 @@
 
 
 (defn main []
-  (println "Hello!")
   (om/root application app-state
            {:target (. js/document (getElementById "tweets"))}))
