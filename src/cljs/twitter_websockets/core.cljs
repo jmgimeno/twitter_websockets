@@ -23,6 +23,15 @@
   (def chsk-state state)                                    ; Watchable, read-only atom
   )
 
+(defn get-bucket [length]
+  (if (< 120 length)
+    :120+
+    (if (< 80 length)
+      :80-120
+      (if (< 40 length)
+        :40-80
+        :-40))))
+
 (defn event-loop [cursor owner]
   (go-loop []
            (let [{:keys [event]} (<! ch-chsk)
@@ -33,13 +42,7 @@
                  (if (or (not (string? val)) (not (clojure.string/blank? val)))
                    (let [length (count val)]
                      (om/transact! cursor [:tweets] #(take 10 (into [val] %)))
-                     (if (< 120 length)
-                       (om/transact! cursor [:statics :length] #(update-in % [:120+] inc))
-                       (if (< 80 length)
-                         (om/transact! cursor [:statics :length] #(update-in % [:80-120] inc))
-                         (if (< 40 length)
-                           (om/transact! cursor [:statics :length] #(update-in % [:40-80] inc))
-                           (om/transact! cursor [:statics :length] #(update-in % [:-40] inc)))))))))
+                     (om/transact! cursor [:statics :length] #(update-in % [(get-bucket length)] inc))))))
              (println (get-in @app-state [:statics :length])))
            (recur)))
 
