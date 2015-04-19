@@ -32,18 +32,24 @@
         :40-80
         :-40))))
 
+(defmulti handle-event (fn [[type _] _] type))
+
+(defmethod handle-event :tweets/text [[_ tweet] cursor]
+  (if (or (not (string? tweet)) (not (clojure.string/blank? tweet)))
+    (let [length (count tweet)]
+      (om/transact! cursor [:tweets] #(take 10 (into [tweet] %)))
+      (om/transact! cursor [:statics :length] #(update-in % [(get-bucket length)] inc)))))
+
+(defmethod handle-event :tweets/lang [[_ langs] cursor]
+  (om/transact! cursor [:statics] #(assoc-in % [:langs] langs)))
+
 (defn event-loop [cursor owner]
   (go-loop []
            (let [{:keys [event]} (<! ch-chsk)
                  [ev-id ev-value] event]
              (if (= :chsk/recv ev-id)
-               (let [[_ val] ev-value]
-                 #_(println "::::::" val)
-                 (if (or (not (string? val)) (not (clojure.string/blank? val)))
-                   (let [length (count val)]
-                     (om/transact! cursor [:tweets] #(take 10 (into [val] %)))
-                     (om/transact! cursor [:statics :length] #(update-in % [(get-bucket length)] inc))))))
-             (println (get-in @app-state [:statics :length])))
+               (handle-event ev-value cursor))
+             (println (get-in @app-state [:statics])))
            (recur)))
 
 (defn tweets-view [{:keys [tweets]} owner]
@@ -67,6 +73,14 @@
          [:div (str "More than 120: " (:120+ cursor))]
          ]))))
 
+(defn langs-view [cursor owner]
+  (reify
+    om/IRender
+    (render [_]
+      (html
+        [:div [:h4 "Most used languages of the tweets:"]
+         (map (fn [[lang num]] [:div (str "Language " lang ": " num)]) cursor)]))))
+
 (defn statics-view [cursor owner]
   (reify
     om/IRender
@@ -74,6 +88,7 @@
       (html
         [:div [:h3 "Tweets Statics:"]
          (om/build length-view (:length cursor))
+         (om/build langs-view (:langs cursor))
          ]))))
 
 (defn application [cursor owner]

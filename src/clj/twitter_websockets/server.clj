@@ -11,7 +11,8 @@
             [org.httpkit.server :refer [run-server]]
             [taoensso.sente :as sente]
             [clojure.core.async :as async :refer [<! <!! chan go-loop thread]]
-            [twitterclient.twitterclient :as tc])
+            [twitterclient.twitterclient :as tc]
+            [clojure.data.priority-map :refer [priority-map-by]])
   (:import (java.util UUID)))
 
 (let [{:keys [ch-recv send-fn ajax-post-fn ajax-get-or-ws-handshake-fn
@@ -79,17 +80,27 @@
 
 (def tweets-chan (chan))
 
+(def lang-count (atom (priority-map-by >)))
+
+(def tweets-count (atom 0))
+
 (defn tweets-loop []
-  (go-loop []
-    (let [tweet (<! tweets-chan)]
-      #_(println (:text tweet))
+  (go-loop [count 0]
+    (let [tweet (<! tweets-chan)
+          lang (:lang tweet)]
+      (if (contains? @lang-count lang)
+        (swap! lang-count update-in [lang] inc)
+        (swap! lang-count assoc lang 1))
       (doseq [uid (:any @connected-uids)]
         #_(println "Sending to uid " uid)
         (chsk-send! uid
-                    [:tweet/broadcast (:text tweet)]))
+                    [:tweets/text (:text tweet)])
+        (if (= 0 (mod count 10))
+          (chsk-send! uid
+                      [:tweets/lang (take 5 @lang-count)])))
 
       )
-    (recur)))
+    (recur (inc count))))
 
 (defn -main [& [port]]
   (run port)
