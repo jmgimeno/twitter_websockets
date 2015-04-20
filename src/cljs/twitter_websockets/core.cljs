@@ -24,13 +24,11 @@
   )
 
 (defn get-bucket [length]
-  (if (< 120 length)
-    :120+
-    (if (< 80 length)
-      :80-120
-      (if (< 40 length)
-        :40-80
-        :-40))))
+  (condp > length
+    40 :-40
+    80 :40-80
+    120 :80-120
+    :120+))
 
 (defmulti handle-event (fn [[type _] _] type))
 

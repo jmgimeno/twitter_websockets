@@ -12,7 +12,8 @@
             [taoensso.sente :as sente]
             [clojure.core.async :as async :refer [<! <!! chan go-loop thread]]
             [twitterclient.twitterclient :as tc]
-            [clojure.data.priority-map :refer [priority-map-by]])
+            [clojure.data.priority-map :refer [priority-map-by]]
+            [clojure.edn :as edn])
   (:import (java.util UUID)))
 
 (let [{:keys [ch-recv send-fn ajax-post-fn ajax-get-or-ws-handshake-fn
@@ -24,6 +25,9 @@
   (def chsk-send! send-fn)                                  ; ChannelSocket's send API fn
   (def connected-uids connected-uids)                       ; Watchable, read-only atom
   )
+
+(def params (edn/read-string (slurp "application-params.edn")))
+
 
 ; UUID and session management
 
@@ -82,7 +86,11 @@
 
 (def lang-count (atom (priority-map-by >)))
 
-(def tweets-count (atom 0))
+(defn get-lang-statistics []
+  (let [lang-statistics @lang-count
+        num-langs (:num-lang-statistics params)]
+    (conj (vec (take num-langs lang-statistics))
+          ["ALTRES" (reduce (fn [ac [_ v]] (+ ac v)) 0 (nthrest lang-statistics num-langs))])))
 
 (defn tweets-loop []
   (go-loop [count 0]
@@ -95,9 +103,9 @@
         #_(println "Sending to uid " uid)
         (chsk-send! uid
                     [:tweets/text (:text tweet)])
-        (if (= 0 (mod count 10))
+        (if (= 0 (mod count (:freq-lang-statistics params)))
           (chsk-send! uid
-                      [:tweets/lang (take 5 @lang-count)])))
+                      [:tweets/lang (get-lang-statistics)])))
 
       )
     (recur (inc count))))
