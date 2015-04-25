@@ -92,22 +92,23 @@
     (conj (vec (take num-langs lang-statistics))
           ["ALTRES" (reduce (fn [ac [_ v]] (+ ac v)) 0 (nthrest lang-statistics num-langs))])))
 
+(defn update-lang-count [lang]
+  (if (contains? @lang-count lang)
+    (swap! lang-count update-in [lang] inc)
+    (swap! lang-count assoc lang 1)))
+
 (defn tweets-loop []
   (go-loop [count 0]
     (let [tweet (<! tweets-chan)
           lang (:lang tweet)]
-      (if (contains? @lang-count lang)
-        (swap! lang-count update-in [lang] inc)
-        (swap! lang-count assoc lang 1))
+      (update-lang-count lang)
       (doseq [uid (:any @connected-uids)]
         #_(println "Sending to uid " uid)
         (chsk-send! uid
                     [:tweets/text (:text tweet)])
         (if (= 0 (mod count (:freq-lang-statistics params)))
           (chsk-send! uid
-                      [:tweets/lang (get-lang-statistics)])))
-
-      )
+                      [:tweets/lang (get-lang-statistics)]))))
     (recur (inc count))))
 
 (defn -main [& [port]]
