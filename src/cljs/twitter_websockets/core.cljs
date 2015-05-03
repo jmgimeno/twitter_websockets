@@ -47,7 +47,7 @@
                  [ev-id ev-value] event]
              (if (= :chsk/recv ev-id)
                (handle-event ev-value cursor))
-             (println (get-in @app-state [:statics])))
+             #_(println (get-in @app-state [:statics])))
            (recur)))
 
 (defn tweets-view [{:keys [tweets]} owner]
@@ -77,7 +77,10 @@
     (render [_]
       (html
         [:div [:h4 "Most used languages of the tweets:"]
-         (map (fn [[lang num]] [:div (str "Language " lang ": " num)]) cursor)]))))
+         (map (fn [lang-statistic]
+                (if (vector? lang-statistic)
+                   [:div (str "Language " (first lang-statistic) ": " (second lang-statistic))]
+                   [:div (str "Other languages: " lang-statistic)])) cursor)]))))
 
 (defn statics-view [cursor owner]
   (reify
@@ -86,8 +89,7 @@
       (html
         [:div [:h3 "Tweets Statics:"]
          (om/build length-view (:length cursor))
-         (om/build langs-view (:langs cursor))
-         ]))))
+         (om/build langs-view (:langs cursor))]))))
 
 (defn application [cursor owner]
   (reify

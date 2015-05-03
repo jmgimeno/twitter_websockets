@@ -84,32 +84,24 @@
 
 (def tweets-chan (chan))
 
-(def lang-count (atom (priority-map-by >)))
-
-(defn get-lang-statistics []
-  (let [lang-statistics @lang-count
-        num-langs (:num-lang-statistics params)]
-    (conj (vec (take num-langs lang-statistics))
-          ["ALTRES" (reduce (fn [ac [_ v]] (+ ac v)) 0 (nthrest lang-statistics num-langs))])))
-
-(defn update-lang-count [lang]
-  (if (contains? @lang-count lang)
-    (swap! lang-count update-in [lang] inc)
-    (swap! lang-count assoc lang 1)))
+(defn get-lang-statistics [langs-count]
+  (let [[lang-statistics other] (split-at (:num-lang-statistics params) langs-count)]
+    (conj lang-statistics (apply + (map second other)))))
 
 (defn tweets-loop []
-  (go-loop [count 0]
+  (go-loop [count (:freq-lang-statistics params)
+            langs-count (priority-map-by >)]
     (let [tweet (<! tweets-chan)
-          lang (:lang tweet)]
-      (update-lang-count lang)
+          lang (:lang tweet)
+          updated-langs-count (update-in langs-count [lang] (fnil inc 0))]
       (doseq [uid (:any @connected-uids)]
         #_(println "Sending to uid " uid)
         (chsk-send! uid
                     [:tweets/text (:text tweet)])
-        (if (= 0 (mod count (:freq-lang-statistics params)))
+        (if (= 1 count)
           (chsk-send! uid
-                      [:tweets/lang (get-lang-statistics)]))))
-    (recur (inc count))))
+                      [:tweets/lang (get-lang-statistics updated-langs-count)])))
+      (recur (condp = count 0 (dec (:freq-lang-statistics params)) (dec count)) updated-langs-count))))
 
 (defn -main [& [port]]
   (run port)
