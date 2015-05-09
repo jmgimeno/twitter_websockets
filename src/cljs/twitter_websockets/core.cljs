@@ -4,12 +4,18 @@
             [om.dom :as dom :include-macros true]
             [taoensso.sente :as sente :refer (cb-success?)]
             [sablono.core :as html :refer-macros [html]]
-            [cljs.core.async :as async :refer (<! >! put! chan)]))
+            [cljs.core.async :as async :refer (<! >! put! chan)]
+            [twitter-websockets.charts :as charts]))
 
 (enable-console-print!)
 
-(defonce app-state (atom {:tweets []
-                          :statics {:length {:-40 0 :40-80 0 :80-120 0 :120+ 0}}}))
+(defonce app-state (atom {:tweets     []
+                          :statistics {:length {:title "Tweet Length"
+                                                :data  {:-40 0 :40-80 0 :80-120 0 :120+ 0}
+                                                :div   {:width "100%" :height "100%"}}
+                                       :langs {:title "Tweet Language"
+                                                :data  []
+                                                :div   {:width "100%" :height "100%"}}}}))
 
 ; WebSockets
 
@@ -36,10 +42,10 @@
   (if (or (not (string? tweet)) (not (clojure.string/blank? tweet)))
     (let [length (count tweet)]
       (om/transact! cursor [:tweets] #(take 10 (into [tweet] %)))
-      (om/transact! cursor [:statics :length] #(update-in % [(get-bucket length)] inc)))))
+      (om/transact! cursor [:statistics :length :data] #(update-in % [(get-bucket length)] inc)))))
 
 (defmethod handle-event :tweets/lang [[_ langs] cursor]
-  (om/transact! cursor [:statics] #(assoc-in % [:langs] langs)))
+  (om/transact! cursor [:statistics :langs] #(assoc-in % [:data] langs)))
 
 (defn event-loop [cursor owner]
   (go-loop []
@@ -59,19 +65,19 @@
          (map #(vector :p %) tweets)
         ]))))
 
-(defn length-view [cursor owner]
+(defn length-view [{:keys [title data]} owner]
   (reify
     om/IRender
     (render [_]
       (html
         [:div [:h4 "Number of letters of the tweets:"]
-         [:div (str "Less than 40: " (:-40 cursor))]
-         [:div (str "From 40 to 80: " (:40-80 cursor))]
-         [:div (str "From 80 to 120: " (:80-120 cursor))]
-         [:div (str "More than 120: " (:120+ cursor))]
+         [:div (str "Less than 40: " (:-40 data))]
+         [:div (str "From 40 to 80: " (:40-80 data))]
+         [:div (str "From 80 to 120: " (:80-120 data))]
+         [:div (str "More than 120: " (:120+ data))]
          ]))))
 
-(defn langs-view [cursor owner]
+(defn langs-view [{:keys [title data]} owner]
   (reify
     om/IRender
     (render [_]
@@ -80,16 +86,24 @@
          (map (fn [lang-statistic]
                 (if (vector? lang-statistic)
                    [:div (str "Language " (first lang-statistic) ": " (second lang-statistic))]
-                   [:div (str "Other languages: " lang-statistic)])) cursor)]))))
+                   [:div (str "Other languages: " lang-statistic)])) data)]))))
 
-(defn statics-view [cursor owner]
+(defn statistics-view [cursor owner]
   (reify
     om/IRender
     (render [_]
       (html
         [:div [:h3 "Tweets Statics:"]
          (om/build length-view (:length cursor))
-         (om/build langs-view (:langs cursor))]))))
+         (om/build langs-view (:langs cursor))
+
+         (om/build charts/bar-chart (:langs cursor)
+                   {:opts {:id "langs-chart"
+                              :bounds {:x "15%" :y "5%" :width "80%" :height "75%"}
+                              :x-axis "Language"
+                              :y-axis "Count"
+                              :plot js/dimple.plot.bar
+                              :color "#d62728"}})]))))
 
 (defn application [cursor owner]
   (reify
@@ -102,7 +116,7 @@
         [:div
          [:h1 "Twitter Streaming"]
          (om/build tweets-view cursor)
-         (om/build statics-view (:statics cursor))]))))
+         (om/build statistics-view (:statistics cursor))]))))
 
 
 (defn main []
