@@ -24,7 +24,7 @@
 (defn- draw-chart [data div {:keys [id bounds x-axis y-axis plot series color]}]
   (let [width        (or (:width div) (:width (default-size id)))
         height       (or (:height div) (:height (default-size id)))
-        data         (aget data "data")
+        data         data
         Chart        (.-chart js/dimple)
         svg          (.newSvg js/dimple (str "#" id) width height)
         dimple-chart (.setBounds (Chart. svg) (:x bounds) (:y bounds) (:width bounds) (:height bounds))

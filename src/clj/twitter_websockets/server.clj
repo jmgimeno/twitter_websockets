@@ -28,6 +28,8 @@
 
 (def params (edn/read-string (slurp "application-params.edn")))
 
+(def langs-codification (edn/read-string (slurp "languages.edn")))
+
 
 ; UUID and session management
 
@@ -86,7 +88,7 @@
 
 (defn get-lang-statistics [langs-count]
   (let [[lang-statistics other] (split-at (:num-lang-statistics params) langs-count)]
-    (conj lang-statistics (apply + (map second other)))))
+    (conj (map (fn [[lang count]] [(or ((keyword lang) langs-codification) lang) count]) lang-statistics) (apply + (map second other)))))
 
 (defn tweets-loop []
   (go-loop [count (:freq-lang-statistics params)
@@ -100,7 +102,8 @@
                     [:tweets/text (:text tweet)])
         (if (= 1 count)
           (chsk-send! uid
-                      [:tweets/lang (get-lang-statistics updated-langs-count)])))
+                      [:tweets/lang (get-lang-statistics updated-langs-count)])
+          (println (get-lang-statistics updated-langs-count))))
       (recur (condp = count 0 (dec (:freq-lang-statistics params)) (dec count)) updated-langs-count))))
 
 (defn -main [& [port]]

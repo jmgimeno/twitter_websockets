@@ -29,12 +29,20 @@
   (def chsk-state state)                                    ; Watchable, read-only atom
   )
 
-(defn get-bucket [length]
+(defn- get-bucket [length]
   (condp > length
     40 :-40
     80 :40-80
     120 :80-120
     :120+))
+
+(defn- reformat-lang [lang]
+  (if (vector? lang)
+    {:language (first lang) :count (second lang)}
+    {:language "Other" :count lang}))
+
+(defn- reformat-length [[length count]]
+  {:length length :count count})
 
 (defmulti handle-event (fn [[type _] _] type))
 
@@ -45,7 +53,7 @@
       (om/transact! cursor [:statistics :length :data] #(update-in % [(get-bucket length)] inc)))))
 
 (defmethod handle-event :tweets/lang [[_ langs] cursor]
-  (om/transact! cursor [:statistics :langs] #(assoc-in % [:data] langs)))
+  (om/transact! cursor [:statistics :langs] #(assoc-in % [:data] (map reformat-lang langs))))
 
 (defn event-loop [cursor owner]
   (go-loop []
@@ -65,28 +73,34 @@
          (map #(vector :p %) tweets)
         ]))))
 
-(defn length-view [{:keys [title data]} owner]
+(defn length-view [{:keys [title data] :as cursor} owner]
   (reify
     om/IRender
     (render [_]
       (html
-        [:div [:h4 "Number of letters of the tweets:"]
-         [:div (str "Less than 40: " (:-40 data))]
-         [:div (str "From 40 to 80: " (:40-80 data))]
-         [:div (str "From 80 to 120: " (:80-120 data))]
-         [:div (str "More than 120: " (:120+ data))]
+        [:div [:h4 title]
+         (om/build charts/bar-chart (update-in cursor [:data] (partial map reformat-length))
+                   {:opts {:id "lenth-chart"
+                           :bounds {:x "15%" :y "5%" :width "80%" :height "75%"}
+                           :x-axis "length"
+                           :y-axis "count"
+                           :plot js/dimple.plot.bar
+                           :color "#d62728"}})
          ]))))
 
-(defn langs-view [{:keys [title data]} owner]
+(defn langs-view [{:keys [title data] :as cursor} owner]
   (reify
     om/IRender
     (render [_]
       (html
-        [:div [:h4 "Most used languages of the tweets:"]
-         (map (fn [lang-statistic]
-                (if (vector? lang-statistic)
-                   [:div (str "Language " (first lang-statistic) ": " (second lang-statistic))]
-                   [:div (str "Other languages: " lang-statistic)])) data)]))))
+        [:div [:h4 title]
+         (om/build charts/bar-chart cursor
+                   {:opts {:id "langs-chart"
+                           :bounds {:x "15%" :y "5%" :width "80%" :height "75%"}
+                           :x-axis "language"
+                           :y-axis "count"
+                           :plot js/dimple.plot.bar
+                           :color "#d62728"}})]))))
 
 (defn statistics-view [cursor owner]
   (reify
@@ -95,15 +109,7 @@
       (html
         [:div [:h3 "Tweets Statics:"]
          (om/build length-view (:length cursor))
-         (om/build langs-view (:langs cursor))
-
-         (om/build charts/bar-chart (:langs cursor)
-                   {:opts {:id "langs-chart"
-                              :bounds {:x "15%" :y "5%" :width "80%" :height "75%"}
-                              :x-axis "Language"
-                              :y-axis "Count"
-                              :plot js/dimple.plot.bar
-                              :color "#d62728"}})]))))
+         (om/build langs-view (:langs cursor))]))))
 
 (defn application [cursor owner]
   (reify
