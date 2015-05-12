@@ -13,7 +13,7 @@
  :ba Bashkir
  :be Belarusian
  :bg Bulgarian
- :bh Bihari languages
+ :bh Bihari_languages
  :bi Bislama
  :bm Bambara
  :bn Bengali
@@ -26,7 +26,7 @@
  :co Corsican
  :cr Cree
  :cs Czech
- :cu Church Slavic
+ :cu Church_Slavic
  :cv Chuvash
  :cy Welsh
  :da Danish
@@ -46,7 +46,7 @@
  :fj Fijian
  :fo Faroese
  :fr French
- :fy Western Frisian
+ :fy Western_Frisian
  :ga Irish
  :gd Gaelic
  :gl Galician
@@ -56,7 +56,7 @@
  :ha Hausa
  :he Hebrew
  :hi Hindi
- :ho Hiri Motu
+ :ho Hiri_Motu
  :hr Croatian
  :ht Haitian
  :hu Hungarian
@@ -66,7 +66,7 @@
  :id Indonesian
  :ie Interlingue
  :ig Igbo
- :ii Sichuan Yi
+ :ii Sichuan_Yi
  :ik Inupiaq
  :io Ido
  :is Icelandic
@@ -80,7 +80,7 @@
  :kj Kuanyama
  :kk Kazakh
  :kl Kalaallisut
- :km Central Khmer
+ :km Central_Khmer
  :kn Kannada
  :ko Korean
  :kr Kanuri
@@ -109,12 +109,12 @@
  :mt Maltese
  :my Burmese
  :na Nauru
- :nd Ndebele, North
+ :nd Ndebele_North
  :ne Nepali
  :ng Ndonga
  :nl Dutch
  :no Norwegian
- :nr Ndebele, South
+ :nr Ndebele_South
  :nv Navajo
  :ny Chichewa
  :oc Occitan
@@ -136,7 +136,7 @@
  :sa Sanskrit
  :sc Sardinian
  :sd Sindhi
- :se Northern Sami
+ :se Northern_Sami
  :sg Sango
  :si Sinhala
  :sk Slovak
@@ -147,7 +147,7 @@
  :sq Albanian
  :sr Serbian
  :ss Swati
- :st Sotho, Southern
+ :st Sotho_Southern
  :su Sundanese
  :sv Swedish
  :sw Swahili
