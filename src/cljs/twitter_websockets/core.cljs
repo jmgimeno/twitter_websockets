@@ -5,7 +5,8 @@
             [taoensso.sente :as sente :refer (cb-success?)]
             [sablono.core :as html :refer-macros [html]]
             [cljs.core.async :as async :refer (<! >! put! chan)]
-            [twitter-websockets.charts :as charts]))
+            [twitter-websockets.charts :as charts]
+            [twitter-websockets.languages :refer (langs-traduction)]))
 
 (enable-console-print!)
 
@@ -38,7 +39,7 @@
 
 (defn- reformat-lang [lang]
   (if (vector? lang)
-    {:language (first lang) :count (second lang)}
+    {:language (or ((keyword (apply str (rest (first lang)))) langs-traduction) (first lang)) :count (second lang)}
     {:language "Other" :count lang}))
 
 (defn- reformat-length [[length count]]
@@ -61,7 +62,7 @@
                  [ev-id ev-value] event]
              (if (= :chsk/recv ev-id)
                (handle-event ev-value cursor))
-             #_(println (get-in @app-state [:statics])))
+             (println (get-in @app-state [:statics])))
            (recur)))
 
 (defn tweets-view [{:keys [tweets]} owner]
@@ -73,13 +74,13 @@
          (map #(vector :p %) tweets)
         ]))))
 
-(defn length-view [{:keys [title data] :as cursor} owner]
+(defn length-view [{:keys [title data div] :as cursor} owner]
   (reify
     om/IRender
     (render [_]
       (html
         [:div [:h4 title]
-         (om/build charts/bar-chart (update-in cursor [:data] (partial map reformat-length))
+         (om/build charts/bar-chart {:div div :data (map reformat-length data)}
                    {:opts {:id "lenth-chart"
                            :bounds {:x "15%" :y "5%" :width "80%" :height "75%"}
                            :x-axis "length"
@@ -88,13 +89,13 @@
                            :color "#d62728"}})
          ]))))
 
-(defn langs-view [{:keys [title data] :as cursor} owner]
+(defn langs-view [{:keys [title data div] :as cursor} owner]
   (reify
     om/IRender
     (render [_]
       (html
         [:div [:h4 title]
-         (om/build charts/bar-chart cursor
+         (om/build charts/bar-chart {:data data :div div}
                    {:opts {:id "langs-chart"
                            :bounds {:x "15%" :y "5%" :width "80%" :height "75%"}
                            :x-axis "language"
@@ -120,9 +121,9 @@
     (render [_]
       (html
         [:div
-         [:h1 "Twitter Streaming"]
-         (om/build tweets-view cursor)
-         (om/build statistics-view (:statistics cursor))]))))
+         [:h1 {:class "text-center"} "Twitter Streaming"]
+         [:div {:class "col-md-6"} (om/build tweets-view cursor)]
+         [:div {:class "col-md-6"} (om/build statistics-view (:statistics cursor))]]))))
 
 
 (defn main []

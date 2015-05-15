@@ -35,15 +35,12 @@
     (aset s "data" (clj->js data))
     (aset dimple-chart "defaultColors" (to-array [(new color-fn color)]))
     (.addOrderRule x (sort-by-field y-axis))
-    (.draw dimple-chart)
-    ;; Rotate x-axis labels
-    (.attr (.selectAll (.-shapes x) "text") "transform" " rotate(45 10 25)")
-    (.attr (.selectAll (.-shapes x) "text") "x" 0)
-    (.attr (.selectAll (.-shapes x) "text") "y" 2)))
+    (.draw dimple-chart)))
 
 (defn bar-chart
   "Simple bar chart done using dimple.js"
   [{:keys [data div]} owner {:keys [id] :as opts}]
+  (println data)
   (reify
     om/IWillMount
     (will-mount [_]
