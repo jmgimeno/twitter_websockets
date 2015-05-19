@@ -39,7 +39,8 @@
 
 (defn- reformat-lang [lang]
   (if (vector? lang)
-    {:language (or ((keyword (apply str (rest (first lang)))) langs-traduction) (first lang)) :count (second lang)}
+    (let [[lang-key count] lang]
+      {:language (or ((keyword lang-key) langs-traduction)) :count count})
     {:language "Other" :count lang}))
 
 (defn- reformat-length [[length count]]
@@ -60,9 +61,8 @@
   (go-loop []
            (let [{:keys [event]} (<! ch-chsk)
                  [ev-id ev-value] event]
-             (if (= :chsk/recv ev-id)
-               (handle-event ev-value cursor))
-             (println (get-in @app-state [:statics])))
+             (when (= :chsk/recv ev-id)
+               (handle-event ev-value cursor)))
            (recur)))
 
 (defn tweets-view [{:keys [tweets]} owner]

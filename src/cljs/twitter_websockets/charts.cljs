@@ -40,7 +40,6 @@
 (defn bar-chart
   "Simple bar chart done using dimple.js"
   [{:keys [data div]} owner {:keys [id] :as opts}]
-  (println data)
   (reify
     om/IWillMount
     (will-mount [_]

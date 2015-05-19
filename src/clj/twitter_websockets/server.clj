@@ -28,8 +28,6 @@
 
 (def params (edn/read-string (slurp "application-params.edn")))
 
-(def langs-codification (edn/read-string (slurp "languages.edn")))
-
 
 ; UUID and session management
 
