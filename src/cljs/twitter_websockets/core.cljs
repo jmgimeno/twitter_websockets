@@ -86,8 +86,7 @@
                            :x-axis "length"
                            :y-axis "count"
                            :plot js/dimple.plot.bar
-                           :color "#d62728"}})
-         ]))))
+                           :color "#d62728"}})]))))
 
 (defn langs-view [{:keys [title data div] :as cursor} owner]
   (reify
