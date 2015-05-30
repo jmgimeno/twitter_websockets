@@ -103,9 +103,28 @@
                       [:tweets/lang (get-lang-statistics updated-langs-count)])
           #_(println (get-lang-statistics updated-langs-count))))
       (recur (condp = count 0 (dec (:freq-lang-statistics params)) (dec count)) updated-langs-count))))
+; Event handling
+
+(defmulti handle-event (fn [[ev-id ev-data]] ev-id))
+
+(defmethod handle-event :twitter_websockets/langs-count [event]
+  (println "Received " event)
+  #_(doseq [uid (:any @connected-uids)]
+    (println "Sent " event " to " uid)
+    (chsk-send! uid event)))
+
+(defmethod handle-event :default [[ev-id ev-data :as event]]
+  #_(println "Received:" event))
+
+(defn event-loop []
+  (go-loop []
+    (let [{:keys [event]} (<! ch-chsk)]
+      (thread (handle-event event)))
+    (recur)))
 
 (defn -main [& [port]]
   (run port)
   (tc/start-twitter-api tweets-chan)
   (tweets-loop)
+  (event-loop)
   )

@@ -40,7 +40,7 @@
 (defn- reformat-lang [lang]
   (if (vector? lang)
     (let [[lang-key count] lang]
-      {:language (or ((keyword lang-key) langs-traduction)) :count count})
+      {:language (or ((keyword lang-key) langs-traduction) lang-key) :count count})
     {:language "Other" :count lang}))
 
 (defn- reformat-length [[length count]]
@@ -80,13 +80,36 @@
     (render [_]
       (html
         [:div [:h4 title]
-         (om/build charts/bar-chart {:div div :data (map reformat-length data)}
+         (om/build charts/horizontal-bar-chart {:div div :data (map reformat-length data)}
                    {:opts {:id "lenth-chart"
-                           :bounds {:x "15%" :y "5%" :width "80%" :height "75%"}
-                           :x-axis "length"
-                           :y-axis "count"
+                           :bounds {:x "8%" :y "8%" :width "80%" :height "75%"}
+                           :x-axis "count"
+                           :y-axis "length"
                            :plot js/dimple.plot.bar
-                           :color "#d62728"}})]))))
+                           :color "#2ECCFA"}})]))))
+
+(defn submit-code [_]
+  (let [nlangs (-> js/document
+                   (.getElementById "nlangs"))]
+    #_(print "Sent: " [:post-to-screen/code code])
+    (chsk-send! [:twitter_websockets/langs-count (.-value nlangs)])))
+
+(defn post-form [_ _]
+  (reify
+    om/IRender
+    (render [_]
+      (html
+        [:div
+         [:label.col-xs-6 "Number of languages to show statistics:"]
+         [:div.col-xs-2
+          [:input.form-control {:id "nlangs"}]]
+         [:div.col-xs-2
+          [:button.btn {:type "button" :on-click (partial submit-code)} "Select"]]]))
+    om/IDidMount
+    (did-mount [_]
+      (-> js/document
+          (.getElementById "nlang")
+          .focus))))
 
 (defn langs-view [{:keys [title data div] :as cursor} owner]
   (reify
@@ -96,11 +119,12 @@
         [:div [:h4 title]
          (om/build charts/bar-chart {:data data :div div}
                    {:opts {:id "langs-chart"
-                           :bounds {:x "15%" :y "5%" :width "80%" :height "75%"}
+                           :bounds {:x "5%" :y "9%" :width "80%" :height "75%"}
                            :x-axis "language"
                            :y-axis "count"
                            :plot js/dimple.plot.bar
-                           :color "#d62728"}})]))))
+                           :color "#d62728"}})
+         (om/build post-form cursor)]))))
 
 (defn statistics-view [cursor owner]
   (reify
