@@ -84,8 +84,10 @@
 
 (def tweets-chan (chan))
 
-(defn get-lang-statistics [langs-count]
-  (let [[lang-statistics other] (split-at (:num-lang-statistics params) langs-count)]
+(def num-langs-clients (atom {}))
+
+(defn get-lang-statistics [langs-count num-langs]
+  (let [[lang-statistics other] (split-at num-langs langs-count)]
     (conj (map (fn [[lang count]] [lang count]) lang-statistics) (apply + (map second other)))))
 
 (defn tweets-loop []
@@ -100,18 +102,18 @@
                     [:tweets/text (:text tweet)])
         (if (= 1 count)
           (chsk-send! uid
-                      [:tweets/lang (get-lang-statistics updated-langs-count)])
+                      [:tweets/lang (get-lang-statistics updated-langs-count
+                                                         (or ((keyword uid) @num-langs-clients) (:num-lang-statistics params)))])
           #_(println (get-lang-statistics updated-langs-count))))
       (recur (condp = count 0 (dec (:freq-lang-statistics params)) (dec count)) updated-langs-count))))
+
 ; Event handling
 
 (defmulti handle-event (fn [[ev-id ev-data]] ev-id))
 
-(defmethod handle-event :twitter_websockets/langs-count [event]
-  (println "Received " event)
-  #_(doseq [uid (:any @connected-uids)]
-    (println "Sent " event " to " uid)
-    (chsk-send! uid event)))
+(defmethod handle-event :twitter_websockets/langs-count [[_ {:keys [nlangs uid]}]]
+  #_(println "Received from: "  uid)
+  (swap! num-langs-clients assoc (keyword uid) (read-string nlangs)))
 
 (defmethod handle-event :default [[ev-id ev-data :as event]]
   #_(println "Received:" event))

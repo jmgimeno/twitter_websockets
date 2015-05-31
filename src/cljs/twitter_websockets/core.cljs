@@ -57,6 +57,9 @@
 (defmethod handle-event :tweets/lang [[_ langs] cursor]
   (om/transact! cursor [:statistics :langs] #(assoc-in % [:data] (map reformat-lang langs))))
 
+(defmethod handle-event :default [event]
+  #_(println "Received:" event))
+
 (defn event-loop [cursor owner]
   (go-loop []
            (let [{:keys [event]} (<! ch-chsk)
@@ -92,7 +95,7 @@
   (let [nlangs (-> js/document
                    (.getElementById "nlangs"))]
     #_(print "Sent: " [:post-to-screen/code code])
-    (chsk-send! [:twitter_websockets/langs-count (.-value nlangs)])))
+    (chsk-send! [:twitter_websockets/langs-count {:nlangs (.-value nlangs) :uid (:uid @chsk-state)}])))
 
 (defn post-form [_ _]
   (reify
