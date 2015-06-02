@@ -29,7 +29,9 @@
         svg          (.newSvg js/dimple (str "#" id) width height)
         dimple-chart (.setBounds (Chart. svg) (:x bounds) (:y bounds) (:width bounds) (:height bounds))
         x            (.addCategoryAxis dimple-chart "x" x-axis)
+        _            (aset x "title" nil)
         y            (.addMeasureAxis dimple-chart "y" y-axis)
+        _            (aset y "title" nil)
         s            (.addSeries dimple-chart series plot (clj->js [x y]))
         color-fn     (-> js/dimple .-color)]
     (aset s "data" (clj->js data))
@@ -74,7 +76,9 @@
         svg          (.newSvg js/dimple (str "#" id) width height)
         dimple-chart (.setBounds (Chart. svg) (:x bounds) (:y bounds) (:width bounds) (:height bounds))
         x            (.addMeasureAxis dimple-chart "x" x-axis)
+        _            (aset x "title" nil)
         y            (.addCategoryAxis dimple-chart "y" y-axis)
+        _            (aset y "title" nil)
         s            (.addSeries dimple-chart series plot (clj->js [x y]))
         color-fn     (-> js/dimple .-color)]
     (aset s "data" (clj->js data))
