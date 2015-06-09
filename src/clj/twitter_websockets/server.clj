@@ -21,8 +21,8 @@
   (def ring-ajax-get-or-ws-handshake ajax-get-or-ws-handshake-fn)
   (def ch-chsk ch-recv)                                     ; ChannelSocket's receive channel
   (def chsk-send! send-fn)                                  ; ChannelSocket's send API fn
-  (def connected-uids connected-uids)                       ; Watchable, read-only atom
-  )
+  (def connected-uids connected-uids))                       ; Watchable, read-only atom
+
 
 ; UUID and session management
 
@@ -82,17 +82,12 @@
 (defn tweets-loop []
   (go-loop []
     (let [tweet (<! tweets-chan)]
-      #_(println (:text tweet))
       (doseq [uid (:any @connected-uids)]
-        #_(println "Sending to uid " uid)
         (chsk-send! uid
-                    [:tweet/broadcast (:text tweet)]))
-
-      )
+                    [:tweets/text (:text tweet)])))
     (recur)))
 
 (defn -main [& [port]]
   (run port)
   (tc/start-twitter-api tweets-chan)
-  (tweets-loop)
-  )
+  (tweets-loop))

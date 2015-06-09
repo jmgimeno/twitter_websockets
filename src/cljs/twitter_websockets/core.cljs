@@ -14,13 +14,13 @@
 
 (let [{:keys [chsk ch-recv send-fn state]}
       (sente/make-channel-socket! "/chsk"                   ; Note the same path as before
-                                  {:type :auto              ; e/o #{:auto :ajax :ws}
-                                   })]
+                                  {:type :auto })]             ; e/o #{:auto :ajax :ws}
+
   (def chsk chsk)
   (def ch-chsk ch-recv)                                     ; ChannelSocket's receive channel
   (def chsk-send! send-fn)                                  ; ChannelSocket's send API fn
-  (def chsk-state state)                                    ; Watchable, read-only atom
-  )
+  (def chsk-state state))                                   ; Watchable, read-only atom
+
 
 (defn event-loop [cursor owner]
   (go-loop []
@@ -28,7 +28,6 @@
                  [ev-id ev-value] event]
              (if (= :chsk/recv ev-id)
                (let [[_ val] ev-value]
-                 #_(println "::::::" val)
                  (if (or (not (string? val)) (not (clojure.string/blank? val)))
                    (om/transact! cursor [:tweets] #(take 10 (into [val] %)))))))
            (recur)))
@@ -39,8 +38,7 @@
     (render [_]
       (html
         [:div [:h3 "Recived Tweets:"]
-         [:ul (map #(vector :li %) tweets)]]
-        ))))
+         (map #(vector :p %) tweets)]))))
 
 (defn application [cursor owner]
   (reify
