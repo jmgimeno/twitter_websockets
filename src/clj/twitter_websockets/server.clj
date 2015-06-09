@@ -95,21 +95,29 @@
 (defn get-num-langs-uid [langs-clients uid]
   (get langs-clients uid (:num-lang-statistics params)))
 
+(defn refresh-all-clients [tweet clock]
+  (doseq [uid (:any @connected-uids)]
+    #_(println "Sending to uid " uid)
+    (chsk-send! uid
+                [:tweets/text (:text tweet)])
+    (if (zero? clock)
+      (chsk-send! uid
+                  [:tweets/lang (get-lang-statistics @lang-statistics
+                                                     (get-num-langs-uid @num-langs-clients uid))])
+      #_(println (get-lang-statistics updated-langs-count)))))
+
+(defn update-language-statistics [lang]
+  (swap! lang-statistics #(update-in % [lang] (fnil inc 0))))
+
+(defn next-tick [clock]
+  (-> clock inc (mod (:freq-lang-statistics params))))
+
 (defn tweets-loop []
-  (go-loop [count 0]
-    (let [tweet (<! tweets-chan)
-          lang (:lang tweet)]
-      (swap! lang-statistics #(update-in % [lang] (fnil inc 0)))
-      (doseq [uid (:any @connected-uids)]
-        #_(println "Sending to uid " uid)
-        (chsk-send! uid
-                    [:tweets/text (:text tweet)])
-        (if (= 0 count)
-          (chsk-send! uid
-                      [:tweets/lang (get-lang-statistics @lang-statistics
-                                                         (get-num-langs-uid @num-langs-clients uid))])
-          #_(println (get-lang-statistics updated-langs-count))))
-      (recur (-> count inc (mod (:freq-lang-statistics params)))))))
+  (go-loop [clock 0]
+    (let [tweet (<! tweets-chan)]
+      (update-language-statistics (:lang tweet))
+      (refresh-all-clients tweet clock)
+      (recur (next-tick clock)))))
 
 ; Event handling
 

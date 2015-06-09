@@ -123,7 +123,7 @@
          (om/build charts/bar-chart {:data data :div div}
                    {:opts {:id "langs-chart"
                            :bounds {:x "7%" :y "5%" :width "90%" :height "80%"}
-                           :x-axis "language"
+                             :x-axis "language"
                            :y-axis "count"
                            :plot js/dimple.plot.bar
                            :color "#d62728"}})
