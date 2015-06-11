@@ -91,28 +91,33 @@
                            :plot js/dimple.plot.bar
                            :color "#2ECCFA"}})]))))
 
-(defn submit-code [_]
-  (let [nlangs (-> js/document
-                   (.getElementById "nlangs"))]
-    #_(print "Sent: " [:post-to-screen/code code])
-    (chsk-send! [:twitter_websockets/langs-count {:nlangs (.-value nlangs) :uid (:uid @chsk-state)}])))
+(defn handle-change [e owner {:keys [num-langs]}]
+  (let [value (.. e -target -value)]
+    (if-not (re-find #".*\D.*" value)
+      (om/set-state! owner :num-langs value)
+      (om/set-state! owner :num-langs num-langs))))
 
-(defn post-form [_ _]
+(defn notify-server [owner]
+  (let [nlangs (-> (om/get-node owner "num-langs")
+                   .-value)]
+    (when nlangs
+      (chsk-send! [:twitter_websockets/langs-count {:nlangs nlangs :uid (:uid @chsk-state)}]))))
+
+(defn num-langs-form [_ owner]
   (reify
-    om/IRender
-    (render [_]
+    om/IInitState
+    (init-state [_]
+      {:num-langs ""})
+    om/IRenderState
+    (render-state [_ state]
       (html
         [:div
          [:label.col-xs-6 "Number of languages to show statistics:"]
          [:div.col-xs-2
-          [:input.form-control {:id "nlangs"}]]
+          [:input.form-control {:type "text" :ref "num-langs" :value (:num-langs state)
+                                :onChange #(handle-change % owner state)}]]
          [:div.col-xs-2
-          [:button.btn {:type "button" :on-click (partial submit-code)} "Select"]]]))
-    om/IDidMount
-    (did-mount [_]
-      (-> js/document
-          (.getElementById "nlang")
-          .focus))))
+          [:button.btn {:type "button" :on-click #(notify-server owner)} "Select"]]]))))
 
 (defn langs-view [{:keys [title data div] :as cursor} owner]
   (reify
@@ -127,7 +132,7 @@
                            :y-axis "count"
                            :plot js/dimple.plot.bar
                            :color "#d62728"}})
-         (om/build post-form cursor)]))))
+         (om/build num-langs-form cursor)]))))
 
 (defn statistics-view [cursor owner]
   (reify
