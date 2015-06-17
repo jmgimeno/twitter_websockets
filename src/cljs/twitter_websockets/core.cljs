@@ -85,7 +85,7 @@
         [:div [:h4 title]
          (om/build charts/horizontal-bar-chart {:div div :data (map reformat-length data)}
                    {:opts {:id "lenth-chart"
-                           :bounds {:x "7%" :y "5%" :width "90%" :height "80%"}
+                           :bounds {:x "43" :y "5%" :width "90%" :height "80%"}
                            :x-axis "count"
                            :y-axis "length"
                            :plot js/dimple.plot.bar
