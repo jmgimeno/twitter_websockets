@@ -1,12 +1,12 @@
  (ns memoria)
 ;desestructuració
 (let [normal [1 2 3]                       ;normal = [1 2 3]
-      [n11 n12 n13] [11 12 13]             ;n11 = 11, n12 = 12, n13 = 13
+      [n11 n12 n13 n14] [11 12 13]             ;n11 = 11, n12 = 12, n13 = 13, n14 = nil
       [n21 & other] [21 22 23]             ;n21 = 21, other = (22, 23)
       [n31 n32 [n33 n34]] [31 32 [33 34]]  ;n31 = 31, n32 = 32, n33 = 33, n34 = 34
       {:keys [a b c]} {:a 41 :b 42 :c 43}] ;a = 41, b = 42, c = 43
   (println normal)
-  (println n11 n12 n13)
+  (println n11 n12 n13 n14)
   (println n21 other)
   (println n31 n32 n33 n34)
   (println a b c))
@@ -14,13 +14,12 @@
 ;binary search tree (persistent dada structures)
 (defn xconj [t v]
   (cond
-    (nil? t) {:val v :L nil :R nil}
-    (< v (:val v)) {:val (:val t)
-                    :L (xconj (:L t) v)
-                    :R (:R t)}
-    :else {:val (:val t)
-           :L (:L t)
-           :R (xconj (:R t) v)}))
+    (nil? t)
+      {:L nil    :val v    :R nil}
+    (< v (:val v))
+      {:L (xconj (:L t) v)    :val (:val t)    :R (:R t)}
+    :else
+      {:L (:L t)    :val (:val t)    :R (xconj (:R t) v)}))
 
 (def tree1
   (-> nil
@@ -50,32 +49,39 @@
 
 ;Servidor
 
-(defn update-language-statistics [lang lang-statistics]
+#_(defn update-language-statistics [lang lang-statistics]
   (update-in lang-statistics [lang] (fnil inc 0)))
+
+(defn update-language-statistics [lang lang-statistics]
+  (if (contains? lang-statistics lang)
+    (update-in lang-statistics [lang] inc)
+    (assoc lang-statistics lang 1)))
 
 (defn get-lang-statistics [lang-statistics]
   (let [[lang-statistics other] (split-at (:num-lang-statistics params) lang-statistics)]
     (conj lang-statistics (apply + (map second other)))))
 
-(defn refresh-all-clients [tweet clock lang-statistics]
+(defn refresh-all-clients [tweet tick lang-statistics]
   (doseq [uid (:any @connected-uids)]
     (chsk-send! uid
                 [:tweets/text (:text tweet)])
-    (if (zero? clock)
+    (if (zero? tick)
       (chsk-send! uid
                   [:tweets/lang (get-lang-statistics lang-statistics)]))))
 
-(defn next-tick [clock]
+ (0 1 2 0 1 2 0 1 2 0 1 2 .....)
+
+#_(defn next-tick [clock]
   (-> clock inc (mod (:freq-lang-statistics params))))
 
 (defn tweets-loop []
-  (go-loop [clock 0
+  (go-loop [[tick & ticks] (cycle (range (:freq-lang-statistics params)))
             lang-statistics (priority-map-by >)]
            (let [tweet (<! tweets-chan)
                  updated-lang-statistics
                  (update-language-statistics (:lang tweet) lang-statistics)]
-             (refresh-all-clients tweet clock updated-lang-statistics)
-             (recur (next-tick clock) updated-lang-statistics))))
+             (refresh-all-clients tweet tick updated-lang-statistics)
+             (recur ticks updated-lang-statistics))))
 (tweets-loop)
 
 ;Iteració 4
@@ -102,10 +108,10 @@ y.title = "";
 
 ;Iteració 5
 ;Servidor
-(defn get-num-langs-uid [langs-clients uid]
+#_(defn get-num-langs-uid [langs-clients uid]
   (get langs-clients uid (:num-lang-statistics params)))
 
-(defn refresh-all-clients [tweet clock]
+#_(defn refresh-all-clients [tweet clock]
   (doseq [uid (:any @connected-uids)]
     #_(println "Sending to uid " uid)
     (chsk-send! uid
@@ -116,15 +122,15 @@ y.title = "";
                                                      (get-num-langs-uid @num-langs-clients uid))]))))
 
 
-(defn update-language-statistics [lang]
+#_(defn update-language-statistics [lang]
   (swap! lang-statistics #(update-in % [lang] (fnil inc 0))))
 
 (defn tweets-loop []
-  (go-loop [clock 0]
+  (go-loop [[tick & ticks] (cycle (range (:freq-lang-statistics params)))]
            (let [tweet (<! tweets-chan)]
              (update-language-statistics (:lang tweet))
-             (refresh-all-clients tweet clock)
-             (recur (next-tick clock)))))
+             (refresh-all-clients tweet tick)
+             (recur ticks))))
 
 (defn num-langs-form [_ owner]
   (reify

@@ -16,10 +16,7 @@
   (fn [x y]
     (let [v1 (if (= (str (aget x "language")) "Other") 0 (first (aget x field)))
           v2 (if (= (str (aget y "language")) "Other") 0 (first (aget y field)))]
-      (cond
-        (> v1 v2) -1
-        (< v1 v2) 1
-        (= v1 v2) 0))))
+      (- v2 v1))))
 
 (defn- draw-chart [data div {:keys [id bounds x-axis y-axis plot series color]}]
   (let [width        (or (:width div) (:width (default-size id)))
@@ -83,7 +80,6 @@
         color-fn     (-> js/dimple .-color)]
     (aset s "data" (clj->js data))
     (aset dimple-chart "defaultColors" (to-array [(new color-fn color)]))
-    #_(.addOrderRule x (sort-by-field x-axis))
     (.draw dimple-chart)))
 
 (defn horizontal-bar-chart

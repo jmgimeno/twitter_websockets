@@ -109,15 +109,15 @@
 (defn update-language-statistics [lang]
   (swap! lang-statistics #(update-in % [lang] (fnil inc 0))))
 
-(defn next-tick [clock]
+#_(defn next-tick [clock]
   (-> clock inc (mod (:freq-lang-statistics params))))
 
 (defn tweets-loop []
-  (go-loop [clock 0]
+  (go-loop [[tick & ticks] (cycle (range (:freq-lang-statistics params)))]
     (let [tweet (<! tweets-chan)]
       (update-language-statistics (:lang tweet))
-      (refresh-all-clients tweet clock)
-      (recur (next-tick clock)))))
+      (refresh-all-clients tweet tick)
+      (recur ticks))))
 
 ; Event handling
 
